@@ -53,8 +53,7 @@ e.g. with maximum likelihood.
 
 ---
 
-What if we could get rid of Z? If we instead model:
-
+What if we could get rid of Z? 
 $$ 
 \begin{align} 
 \nabla_x log p_\theta(x) &= \nabla_x log ( \frac{e^{-f_\theta(x)}}{Z_\theta} ) \\
@@ -74,12 +73,17 @@ $$
 
 A *score network* $s_\theta(x): \mathbb R ^D \to \mathbb R ^D$ is a neural network trained to approximate the score of $p_{data}(x)$ 
 
+---
+
+![bg width:400](figures/ebm.gif)
+![bg width:400](figures/score.gif)
+
 
 ---
 
 # Score Networks
 
-**Def.** The *(Stein) score* of a probability density $p(x)$ is $s(x)=\nabla_x log p(x)$
+**Def.** The *(Stein) score* of a probability density $p(x)$ is $s(x)=\nabla_x \log p(x)$
 
 A *score network* $s_\theta(x): \mathbb R ^D \to \mathbb R ^D$ is a neural network trained to approximate the score of $p_{data}(x)$ 
 
@@ -95,7 +99,7 @@ A *score network* $s_\theta(x): \mathbb R ^D \to \mathbb R ^D$ is a neural netwo
 
 **Q1.** How do we learn $s_\theta(x)$?
 **A.** We optimize the score matching objective: 
-$$L(\theta) \triangleq \frac{1}{2} \mathbb{E}_{p_{data}}[\|s_\theta(x) - s_{data}(x)\|^2_2]$$
+$$L(\theta) \triangleq \frac{1}{2} \mathbb{E}_{p_{data}}[\|s_\theta(x) - \nabla_x \log p_{data}(x)\|^2_2]$$
 
 ---
 
@@ -104,11 +108,11 @@ $$L(\theta) \triangleq \frac{1}{2} \mathbb{E}_{p_{data}}[\|s_\theta(x) - s_{data
 **Q1:** How do we learn $s_\theta(x)$?
 
 **A:** We optimize the score matching objective: 
-$$L(\theta) \triangleq \frac{1}{2} \mathbb{E}_{p_{data}}[\|s_\theta(x) - s_{data}(x)\|^2_2]$$
+$$L(\theta) \triangleq \frac{1}{2} \mathbb{E}_{p_{data}}[\|s_\theta(x) - \nabla_x \log p_{data}(x)\|^2_2]$$
 
-But we don't have access to $\nabla_x log p_{data}(x)$ !
+But we don't have access to $\nabla_x \log p_{data}(x)$ !
 
-can be shown equivalent (up to a constant) to: 
+$L$ can be shown equivalent (up to a constant) to: 
 $$\mathbb{E}_{p_{data}(x)}[tr(\nabla_x s_\theta(x))+ \frac{1}{2}\|s_\theta(x)\|_2^2]$$
 
 We can compute this from data, but calculating $tr(\nabla_x s_\theta(x))$ is too costly.
@@ -126,7 +130,7 @@ We perturb the data with a noise distribution $q_\sigma(\tilde x | x)$, then est
 $$\frac{1}{2} \mathbb{E}_{q_{\sigma}(\tilde x|x)p_{\text{data}}(x)} [ \left\| s_{\theta}(\tilde x) - \nabla_{\tilde x} \log q_{\sigma}(\tilde x|x) \right\|^2_2]
 $$
 
-E.g. for Gaussian $\nabla _{\tilde x} \log q_\sigma(\tilde x | x) = - \frac{\tilde x - x} {\sigma^2}$
+E.g. for Gaussian $q_\sigma(\tilde x | x) = \mathcal N (\tilde x | x, \sigma^2 I)$, $\nabla _{\tilde x} \log q_\sigma(\tilde x | x) = - \frac{\tilde x - x} {\sigma^2}$
 
 Then $s_{\theta *} (x) = \nabla_x \log q_\sigma (x)$ almost surely.
 
@@ -168,7 +172,8 @@ The distribution of $\tilde x_T$ approaches $p(x)$ when $\epsilon \to 0, T \to \
 
 ![bg width:600px ](figures/score1.png)
 
-![bg width:600px ](figures/score2.png)
+<!-- ![bg width:600px ](figures/score2.png) -->
+![bg width:500](figures/langevin.gif)
 
 
 
@@ -307,6 +312,11 @@ $$
 ---
 # Annealed Langevin Dynamics
 
+![height:400](figures/ald.gif)
+
+---
+# Annealed Langevin Dynamics
+
 How to choose $\alpha_i$?
 
 - Many ways to tune $\alpha_i$. We use $\alpha_i \propto \sigma_i^2$.
@@ -336,21 +346,8 @@ How to choose $\alpha_i$?
 ---
 
 # Results 
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-
-<!-- ![height:400px](figures/results_table.png) -->
-![bg right height:500px](figures/generation.png)
+![height:500px](figures/results_table.png)
+![bg right height:570px](figures/generation.png)
 
 
 
@@ -367,14 +364,13 @@ How to choose $\alpha_i$?
 <br>
 
 
-![ ](vdm_presentation/figs/forward.png)
+![ ](figures/forward.png)
 
 
 ---
 
-# NCSM vs DDPM
 
-### ELBO for DDPM
+# ELBO for DDPM
 
 $$
 \begin{align}
@@ -552,3 +548,98 @@ $$
 $$
 \Rightarrow \nabla_{x_t} \log p(x_t) = - \frac{1}{\sqrt{1-\bar \alpha_t}} \epsilon_0
 $$
+
+
+---
+# Perturbing images with SDEs
+
+When the noise levels approach infinity, we essentially perturb the data with a **Stochastic Differential Equation (SDE)**
+
+![height:350px](figures/perturb_vp.gif)
+
+---
+
+# SDEs
+
+In general, SDEs have the form
+
+$$
+dx=f(x,t)dt+g(t)dw
+$$
+
+where $f( . , t):\mathbb R^D \to \mathbb R^D$ is called the *drift coefficient* and $g(t)\in \mathbb R$ is called the *diffusion coefficient*. 
+
+$w$ denotes a standard Brownian motion, and $dw$ can be considered an infinitesimal white noise.
+
+The solution is a continuous collection of random variables $\{x(t)\}_{t\in [0,1]}$.
+
+---
+
+# Reversing the SDE
+
+To sample from $x(T)\sim p_T$ and get new data from $p_{data}$, we can reverse the SDE (the reverse of a diffusion process is also a diffusion process [Anderson 1982]): 
+$$
+dx = \left[ f(x,t) - g^2(t) \nabla_x \log p_t(x) \right] dt + g(t) d \tilde w.
+$$
+
+![height:350px](figures/denoise_vp.gif)
+
+---
+
+# Estimating the scores
+
+To solve the reverse-time SDE we need:
+- The terminal distribution $p(T) \approx \pi (x)$
+- The score $\nabla_x \log p_t(x)$
+
+To estimate the score we can use score matching techniques to train a *time dependent score model*, with objective:
+
+$$
+\mathbb{E}_{t \in U(0,T)}\mathbb{E}_{p_{t}(x)}[\lambda(t) \|\nabla_x \log p_t(x) - s_{\theta}(x, t)\|^2_2]
+$$
+
+Then we can solve the reverse-time SDE with numerical SDE solvers (e.g. Euler - Maruyama)
+
+---
+
+# Probability flow ODEs
+
+For all diffusion processes, there exists a deterministicc process whose trajectories share the same marginal probabilities $\{p_t(x)\}_{t=0}^T$ as the SDE. 
+
+This process satisfies the *probability flow ODE*:
+
+$$
+dx = \left[ f(x,t) - \frac{1}{2} g^2(t) \nabla_x \log p_t(x) \right] dt.
+$$
+
+
+
+---
+
+![](figures/teaser.jpg)
+
+---
+
+# Neural ODE
+
+When $\nabla_x \log p_t(x)$ is replaced by $s(x,t)$, it becomes a special case of *neural ODE*, specifically continuous normalizing flows.
+
+So we get:
+
+- Exact likelihood estimation.
+- Encoding data points $x(0)$ to latent space $x(T)$.
+    - Decoding by integrating corresponding ODE for reverse-time SDE.
+    - We can manipulate the latent representation for editing by interpolation, temperature scaling.
+- We get a uniquely identifiable encoding given sufficient data and model capacity.
+- Efficient sampling by discretizing the ODE (link with DDIM?)
+
+---
+
+# Thank you for your attention!
+
+![](figures/celebahq_256.jpg)
+
+<!-- Q: How to model discrete data distributions? -->
+
+
+
